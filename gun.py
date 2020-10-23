@@ -2,9 +2,6 @@ from random import randrange as rnd, choice
 import tkinter as tk
 import math
 import time
-import pygame
-
-# print (dir(math))
 
 root = tk.Tk()
 fr = tk.Frame(root)
@@ -59,13 +56,13 @@ class Ball:
         и стен по краям окна (размер окна 800х600).
         """
 
-        if self.x > 780:
+        if self.x + self.vx > 780:
             self.vx = - self.vx
         self.vx = self.vx * (Ball.total_live - 2) / Ball.total_live
 
         if self.y - self.vy > Ball.y_max:
             self.vy = - self.vy
-        if not ((abs(self.vy) < 20) & (abs(self.y - Ball.y_max) < 20)):
+        if not ((abs(self.vy) < 10) & (abs(self.y - Ball.y_max) < 10)):
             self.vy -= (Ball.total_live - self.live) / 5
         else:
             self.vy = 0
@@ -118,10 +115,13 @@ class Gun:
         self.f2_on = 0
         self.f2_power = 10
 
-    def targeting(self, event=0):
+    def targeting(self, event):
         """Прицеливание. Зависит от положения мыши."""
         if event:
-            self.an = math.atan((event.y - 450) / (event.x - 20))
+            if event.x != 20:
+                self.an = math.atan((event.y - 450) / (event.x - 20))
+            else:
+                self.an = math.pi / 2
         if self.f2_on:
             canv.itemconfig(self.id, fill='orange')
         else:
@@ -144,12 +144,12 @@ class Gun:
 
 
 class Target:
+    points = 0
+    id_points = canv.create_text(30, 30, text=points, font='28')
 
     def __init__(self):
-        self.points = 0
         self.live = 1
         self.id = canv.create_oval(0, 0, 0, 0)
-        self.id_points = canv.create_text(30, 30, text=self.points, font='28')
 
         self.x = rnd(600, 780)
         self.y = rnd(300, 550)
@@ -167,8 +167,8 @@ class Target:
     def hit(self, points=1):
         """Попадание шарика в цель."""
         canv.coords(self.id, -10, -10, -10, -10)
-        self.points += points
-        canv.itemconfig(self.id_points, text=self.points)
+        Target.points += points
+        canv.itemconfig(Target.id_points, text=Target.points)
 
 
 screen1 = canv.create_text(400, 300, text='', font='28')
@@ -177,11 +177,11 @@ bullet = 0
 balls = []
 
 
-def new_game(event=''):
-    global gun, screen1, balls, bullet
-    t1 = Target()
+def new_game():
+    global screen1, balls, bullet
     bullet = 0
     balls = []
+    t1 = Target()
     canv.bind('<Button-1>', g1.fire2_start)
     canv.bind('<ButtonRelease-1>', g1.fire2_end)
     canv.bind('<Motion>', g1.targeting)
@@ -201,12 +201,12 @@ def new_game(event=''):
                 balls.remove(b)
         canv.update()
         time.sleep(0.03)
-        g1.targeting()
+        g1.targeting(0)
         g1.power_up()
     canv.itemconfig(screen1, text='')
-    canv.delete(gun)
     root.after(750, new_game)
 
 
 new_game()
-# mainloop()
+
+root.mainloop()
