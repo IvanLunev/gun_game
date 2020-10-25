@@ -1,4 +1,5 @@
 from random import randrange as rnd, choice
+import random
 import tkinter as tk
 import math
 import time
@@ -147,13 +148,22 @@ class Target:
     points = 0
     id_points = canv.create_text(30, 30, text=points, font='28')
 
+    x_left = 200
+    x_right = 780
+    y_left = 100
+    y_right = 550
+
     def __init__(self):
         self.live = 1
+
+        self.speed = rnd(1, 6)
+        self.angle = random.uniform(0, 2 * math.pi)
+
         self.id = canv.create_oval(0, 0, 0, 0)
 
-        self.x = rnd(600, 780)
-        self.y = rnd(300, 550)
-        self.r = rnd(2, 50)
+        self.r = rnd(10, 50)
+        self.x = rnd(Target.x_left + self.r, Target.x_right - self.r)
+        self.y = rnd(Target.y_left + self.r, Target.y_right - self.r)
         self.color = 'red'
         canv.coords(
             self.id,
@@ -169,6 +179,31 @@ class Target:
         canv.coords(self.id, -10, -10, -10, -10)
         Target.points += points
         canv.itemconfig(Target.id_points, text=Target.points)
+
+    def move(self):
+        """ Задает движение цели."""
+
+        if self.live:
+            if self.x - self.r + self.speed * math.cos(self.angle) < self.x_left:
+                self.angle = math.pi - self.angle
+            elif self.x + self.r + self.speed * math.cos(self.angle) > self.x_right:
+                self.angle = math.pi - self.angle
+            elif self.y - self.r + self.speed * math.sin(self.angle) < self.y_left:
+                self.angle = 2 * math.pi - self.angle
+            elif self.y + self.r + self.speed * math.sin(self.angle) > self.y_right:
+                self.angle = 2 * math.pi - self.angle
+
+            self.x = self.x + self.speed * math.cos(self.angle)
+            self.y = self.y + self.speed * math.sin(self.angle)
+
+            canv.coords(
+                self.id,
+                self.x - self.r,
+                self.y - self.r,
+                self.x + self.r,
+                self.y + self.r
+            )
+            canv.itemconfig(self.id, fill=self.color)
 
 
 screen1 = canv.create_text(400, 300, text='', font='28')
@@ -190,12 +225,14 @@ def new_game():
     targets = []
     for k in range(n_targets):
         targ = Target()
-        targ.live = 1
         targets.append(targ)
     canv.itemconfig(screen1, text='')
 
     target_lives_sum = sum([t.live for t in targets])
     while (target_lives_sum > 0) or balls:
+
+        for t1 in targets:
+            t1.move()
 
         for b in balls:
             b.move()
