@@ -181,21 +181,38 @@ def new_game():
     global screen1, balls, bullet
     bullet = 0
     balls = []
-    t1 = Target()
+
     canv.bind('<Button-1>', g1.fire2_start)
     canv.bind('<ButtonRelease-1>', g1.fire2_end)
     canv.bind('<Motion>', g1.targeting)
 
-    t1.live = 1
-    while t1.live or balls:
+    n_targets = 10
+    targets = []
+    for k in range(n_targets):
+        targ = Target()
+        targ.live = 1
+        targets.append(targ)
+    canv.itemconfig(screen1, text='')
+
+    target_lives_sum = sum([t.live for t in targets])
+    while (target_lives_sum > 0) or balls:
+
         for b in balls:
             b.move()
-            if b.hittest(t1) and t1.live:
-                t1.live = 0
-                t1.hit()
-                canv.bind('<Button-1>', '')
-                canv.bind('<ButtonRelease-1>', '')
-                canv.itemconfig(screen1, text='Вы уничтожили цель за ' + str(bullet) + ' выстрелов')
+            for t1 in targets:
+                if b.hittest(t1) and t1.live:
+                    t1.hit()
+                    t1.live = 0
+
+                    target_lives_sum -= 1
+                    if target_lives_sum == 0:
+                        canv.itemconfig(screen1, text='Вы уничтожили цели за ' +
+                                                      str(bullet) +
+                                                      ' выстрелов')
+                        canv.bind('<Button-1>', '')
+                        canv.bind('<ButtonRelease-1>', '')
+                        canv.bind('<Motion>', g1.targeting)
+
             if b.live == 0:
                 b.del_ball()
                 balls.remove(b)
@@ -203,7 +220,6 @@ def new_game():
         time.sleep(0.03)
         g1.targeting(0)
         g1.power_up()
-    canv.itemconfig(screen1, text='')
     root.after(750, new_game)
 
 
